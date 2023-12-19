@@ -1,0 +1,3 @@
+fusepy
+libtorrent==2.0.9
+torrentstream
