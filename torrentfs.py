@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 class TorrentFS(Operations):
-    def __init__(self, root):#, torrent_session):
+    def __init__(self, root):
         self.root = root
         self.torrent_session = TorrentSession()
         logger.debug(f"Started torrent session: {self.torrent_session}")
@@ -39,10 +39,6 @@ class TorrentFS(Operations):
             return torrent
 
     def _torrent_path(self, full_path):
-        """
-        Iterate over the full path and try to find the torrent file.
-
-        """
         paths = full_path.split('/')
         tmp_path = ''
 
@@ -160,7 +156,6 @@ class TorrentFS(Operations):
 
                             if directory and directory not in dirents:
                                 dirents.append(directory)
-                   
         for r in dirents:
             if r.endswith('.torrent'):
                 r = r.replace('.torrent', '')
@@ -191,23 +186,8 @@ class TorrentFS(Operations):
 
             if self._file_in_torrent(sub_path, torrent_full_path): 
                 return True
-            
+
             return False
-
-            with self._open_torrent(torrent_full_path) as torrent:
-                torrent_file = next((f for f in torrent if os.path.split(f.path)[1] == filename), None)
-
-                if torrent_file:
-                    while torrent_file.wait_for_completion(100): # we need the whole one mac!
-                        logger.debug(f"{filename} downloaded {torrent_file.file_progress}%")
-                        sleep(1)
-
-                    torrent_file_path = os.path.join(torrent_file.root, torrent_file.path)
-
-                    if os.path.isfile(torrent_file_path):
-                        logger.debug(f"Open torrent file: {torrent_file_path}")
-                        return os.open(torrent_file_path, flags)
-
         else:
             return os.open(full_path, flags)
     # https://gist.github.com/tizbac/2df2609726d6058b3c99
@@ -230,7 +210,6 @@ class TorrentFS(Operations):
                 if torrent_file:
                     logger.debug(f"Reading file: {filename} | Length: {length} | Offset: {offset}")
                     return torrent_file.read(length, offset)
-
         else:
             os.lseek(fh, offset, os.SEEK_SET)
             return os.read(fh, length)

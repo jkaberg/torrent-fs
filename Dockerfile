@@ -1,4 +1,4 @@
-FROM python:bullseye
+FROM python:slim-bookworm
 
 ENV DEBUG=False
 ENV SOURCE=/media/source
