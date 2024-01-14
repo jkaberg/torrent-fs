@@ -190,6 +190,7 @@ class TorrentFS(Operations):
             return False
         else:
             return os.open(full_path, flags)
+
     # https://gist.github.com/tizbac/2df2609726d6058b3c99
     def read(self, path, length, offset, fh):
         full_path = self._full_path(path)

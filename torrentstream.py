@@ -303,6 +303,9 @@ class TorrentFile:
         # we have issues with buffering
         # especially on larger files
         # so we need some form of readahead
+
+        # TODO: can we find inspiration here?
+        # https://github.com/animeshkundu/pyflix/blob/master/torrent/strategy.py
         offset += self.offset
         info = self.handle.get_torrent_info()
         piece_length = info.piece_length()
@@ -311,26 +314,33 @@ class TorrentFile:
 
         needed_pieces = range(offset // piece_length, (offset + length) // piece_length + 1)
         completed_pieces = all(self.handle.have_piece(p) for p in needed_pieces)
+        #prioritized_pieces = []
 
         if not completed_pieces:  # We don't have the needed pieces
-            logging.debug(f"Asking for pieces: {list(needed_pieces)}")
-            prioritized_pieces = [min(1, max(0, 2 - abs(p - offset // piece_length))) for p in range(info.num_pieces())] #[1 if p in needed_pieces else 0 for p in range(info.num_pieces())]
-            self.handle.prioritize_pieces(prioritized_pieces)
+            logging.debug(f"Asking for pieces: {needed_pieces}")
+
+            # https://www.libtorrent.org/streaming.html
+            deadline = 10000
+
+            for p in range(needed_pieces[-1], min(needed_pieces[-1] + 4, info.num_pieces())):
+                logging.debug(f"Setting deadline for piece: {p}")
+                #self.handle.piece_priority(p, 7)
+                self.handle.piece_priority(p, 7)
+                self.handle.set_piece_deadline(p, deadline)
+                deadline -= 1000
 
             completed_pieces = False
 
+            logging.debug(f"Waiting to complete pieces: {needed_pieces}")
             while not completed_pieces:
                 completed_pieces = all(self.handle.have_piece(p) for p in needed_pieces)
-
-                time.sleep(1)
+                time.sleep(0.1)
             
             self.handle.flush_cache()
         else:
-            logging.debug(f"Pieces already downloaded: {completed_pieces}")
-    
-        path = os.path.join(self.root, self.path)
-
-        with open(path, 'rb') as file:
+            logging.debug(f"Pieces already downloaded: {needed_pieces}")
+   
+        with open(os.path.join(self.root, self.path), 'rb') as file:
             file.seek(offset - self.offset)
             return file.read(length)
 
