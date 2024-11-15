@@ -13,5 +13,5 @@ While I'm sure there are many issues with the current code, the best way to reso
 
 ## Installation
 
-`apt-get install libfuse-dev`
+`apt-get install fuse`
 `pip install -r requirements.txt`

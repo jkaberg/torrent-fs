@@ -1,16 +1,15 @@
-FROM python:slim-bookworm
+FROM python:3.9-slim
 
-ENV DEBUG=False
-ENV SOURCE=/media/source
-ENV MOUNTPOINT=/media/mountpoint
+ENV ALLOW_OTHER=true
 
-RUN apt update && apt upgrade -y \
-    && apt install -y libfuse-dev git \
-    && git clone https://github.com/jkaberg/torrent-fs.git /torrent-fs \
-    && cd /torrent-fs \
-    && pip install -r requirements.txt \
-    && mkdir -p /media/{source,mountpoint}
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fuse \
+    && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /torrent-fs
+WORKDIR /app
 
-CMD python /torrent-fs/torrentfs.py $MOUNTPOINT $SOURCE
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY torrentfs.py .
+
+ENTRYPOINT ["python", "/app/torrentfs.py", "/mnt/target", "/mnt/root"]
